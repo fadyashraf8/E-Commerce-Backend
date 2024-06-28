@@ -16,7 +16,7 @@ orderRouter
    
     orderRouter
     .route('/getAllOrders')
-    .get(protectedRoutes, allowedTo('admin','user'), order.getAllOrder)
+    .get(order.getAllOrder)
 
 orderRouter
     .route('/:id')

@@ -97,7 +97,32 @@ const createVisaOrder = catchAsyncError(
 
     }
 )
+const createSessionOrder = catchAsyncError( (request, response) => {
+        const sig = request.headers['stripe-signature'].toString()
+
+        let event;
+
+        try {
+            event = stripe.webhooks.constructEvent(request.body, sig, 'whsec_NgKHUUmbghBXOUFG0EC5AcLxTKDcSAwr');
+        } catch (err) {
+            return  response.status(400).send(`Webhook Error: ${err.message}`);
+            
+        }
+
+        // Handle the event
+
+        if(event.type==='checkout.session.completed'){
+            console.log('order here');
+            const checkoutSessionCompleted = event.data.object;
+
+        }else{
+            console.log(`Unhandled event type ${event.type}`);
+
+        }
+  
+    }
+)
 
 export {
-    createCashOrder, getUserOrder, getAllOrder, createVisaOrder
+    createCashOrder, getUserOrder, getAllOrder, createVisaOrder,createSessionOrder
 }

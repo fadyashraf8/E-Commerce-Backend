@@ -4,12 +4,14 @@ import { dbConnection } from './database/dbConnection.js'
 import morgan from "morgan"
 import cors from 'cors'
 import { init } from './src/index.routes.js'
+import { createSessionOrder } from './src/modules/order/order.controller.js'
 dotenv.config()
 const app = express()
 const port = 3000
 
 
 //middleware
+app.post('/webhook', express.raw({type: 'application/json'}),createSessionOrder );
 app.use(express.json())
 app.use(morgan("dev"))
 
@@ -24,3 +26,9 @@ app.listen(process.env.PORT || port, () => console.log(`Example app listening on
 process.on("unhandledRejection", (err) => {
     console.log("unhandledRejection", err);
 })
+
+
+
+
+
+
