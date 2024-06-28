@@ -23,7 +23,6 @@ const createCategory = catchAsyncError(
 
 const getAllCategories = catchAsyncError(
     async (req, res, next) => {
-
         let apifeatures = new ApiFeatures(categoryModel.find({}), req.query)
             .paginate().sort().fields().filter().search()
         let result = await apifeatures.mongooseQuery

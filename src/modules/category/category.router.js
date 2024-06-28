@@ -14,7 +14,7 @@ categoryRouter.use('/:categoryId/subCategories',subCategoryRouter)
 categoryRouter
 .route('/')
 .post(protectedRoutes, allowedTo('admin','user'),uploadSingleFile("image","category"),validation(createCategorySchema),createCategory)
-.get(protectedRoutes, allowedTo('admin','user'),getAllCategories)
+.get(getAllCategories)
 
 categoryRouter
 .route('/:id')
