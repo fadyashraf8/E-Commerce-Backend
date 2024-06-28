@@ -104,7 +104,9 @@ const createSessionOrder = catchAsyncError((request, response) => {
     let event;
 
     try {
-        event = stripe.webhooks.constructEvent(request.body, sig, 'whsec_NgKHUUmbghBXOUFG0EC5AcLxTKDcSAwr');
+        event =
+         stripe.webhooks
+         .constructEvent(request.body, sig,'whsec_DvGuj5WYptM6Rd1DEOHpEV06f5vqpJCr');
     } catch (err) {
         return response.status(400).send(`Webhook Error: ${err.message}`);
 
@@ -114,7 +116,7 @@ const createSessionOrder = catchAsyncError((request, response) => {
 
     if (event.type === 'checkout.session.completed') {
         console.log('order here');
-        card(event.data.object)
+        card(event.data.object,response)
     } else {
         console.log(`Unhandled event type ${event.type}`);
 
@@ -128,20 +130,21 @@ export {
 }
 
 
-async function card(e,res) {
+async function card(e, res) {
     const cart = await cartModel.findById(e.client_reference_id)
     if (!cart) return next(new AppError(`cart not found`, 404))
-    let user = await userModel.findOne({email:e.customer_email})
+    let user = await userModel.findOne({ email: e.customer_email })
+    if (!user) return next(new AppError(`user not found`, 404))
 
 
     const order = new orderModel({
         user: user._id,
         cartItems: cart.cartItems,
-        totalOrderPrice:e.amount_total/100,
+        totalOrderPrice: e.amount_total / 100,
         shippingAddress: e.metadata.shippingAddress,
-        paymentMethod:'visa',
-        isPaid:true,
-        paidAt:Date.now(),
+        paymentMethod: 'visa',
+        isPaid: true,
+        paidAt: Date.now(),
     })
     await order.save()
 
@@ -153,7 +156,7 @@ async function card(e,res) {
             }
         }))
         await productModel.bulkWrite(options)
-        await cartModel.findByIdAndDelete({user:user._id    })
+        await cartModel.findByOneAndDelete({ user: user._id })
 
         return res.status(200).json({ message: "success", order })
     } else {
