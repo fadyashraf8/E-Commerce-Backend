@@ -22,7 +22,7 @@ function calcTotalPrice(cart) {
 const addToCart = catchAsyncError(
     async (req, res, next) => {
         let product = await productModel.findById(req.body.product)
-        if (!product) return next(AppError("Product Not Found", 401))
+        if (!product) return next(new AppError("Product Not Found", 401))
         req.body.price = product.price
         let isExist = await cartModel.findOne({ user: req.user._id })
         if (!isExist) {

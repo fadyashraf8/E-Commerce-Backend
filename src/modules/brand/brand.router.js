@@ -11,14 +11,14 @@ const brandRouter=express.Router()
 
 brandRouter
 .route('/')
-.post(protectedRoutes,allowedTo('admin'),uploadSingleFile('logo','brand'),validation(createBrandSchema),createBrand)
+.post(protectedRoutes,allowedTo('admin','user'),uploadSingleFile('logo','brand'),validation(createBrandSchema),createBrand)
 .get(getAllBrands)
 
 brandRouter
 .route('/:id')
 .get(validation(getBrandSchema),getBrand)
-.put(protectedRoutes,allowedTo('admin'),validation(updateBrandSchema),updateBrand)
-.delete(protectedRoutes,allowedTo('admin'),validation(deleteBrandSchema),deleteBrand)
+.put(protectedRoutes,allowedTo('admin','user'),validation(updateBrandSchema),updateBrand)
+.delete(protectedRoutes,allowedTo('admin','user'),validation(deleteBrandSchema),deleteBrand)
 
 
 export default brandRouter
