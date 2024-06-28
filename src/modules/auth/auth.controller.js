@@ -18,7 +18,7 @@ export const signup = catchAsyncError(
 export const signin = catchAsyncError(async (req, res, next) => {
     const { email, password } = req.body
     let isFound = await userModel.findOne({ email })
-
+    if (!isFound) return next(new AppError(`Email Not Found`, 404))
     const match = await bcrypt.compare(password, isFound.password);
     if (isFound && match) {
         let token = jwt.sign({ name: isFound.email, userId: isFound._id, role: isFound.role }, process.env.JWT_KEY)
