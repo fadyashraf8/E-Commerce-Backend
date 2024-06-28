@@ -24,8 +24,8 @@ const addToCart = catchAsyncError(
         let product = await productModel.findById(req.body.product)
         if (!product) return next(new AppError("Product Not Found", 401))
         req.body.price = product.price
-        let isExist = await cartModel.findOne({ user: req.user._id })
-        if (!isExist) {
+        let cart = await cartModel.findOne({ user: req.user._id })
+        if (!cart) {
             let result = new cartModel({
                 user: req.user._id,
                 cartItems: [req.body]
@@ -34,20 +34,20 @@ const addToCart = catchAsyncError(
             await result.save()
             return res.status(200).json({ message: "success", result })
         }
-        let item = isExist.cartItems.find((el) => el.product == req.body.product)
+        let item = cart.cartItems.find((el) => el.product == req.body.product)
         if (item) {
             item.quantity += req.body.quantity || 1
         } else {
-            isExist.cartItems.push(req.body)
+            cart.cartItems.push(req.body)
         }
-        calcTotalPrice(isExist)
+        calcTotalPrice(cart)
 
-        if (isExist.discount) {
-            isExist.totalPriceAfterDiscount = isExist.totalPrice - (isExist.totalPrice * isExist.discount) / 100
+        if (cart.discount) {
+            cart.totalPriceAfterDiscount = cart.totalPrice - (cart.totalPrice * cart.discount) / 100
         }
 
-        await isExist.save()
-        res.json({ message: "success", isExist })
+        await cart.save()
+        res.json({ message: "success", cart })
     }
 )
 const removeFromCart = catchAsyncError(

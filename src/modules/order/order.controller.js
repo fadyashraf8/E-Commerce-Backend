@@ -5,6 +5,7 @@
 import { cartModel } from '../../../database/models/cart.model.js';
 import { orderModel } from '../../../database/models/order.model.js';
 import { productModel } from '../../../database/models/product.model.js';
+import { userModel } from '../../../database/models/user.model.js';
 
 import { catchAsyncError } from '../../middleware/catchAsyncError.js';
 import { AppError } from '../../utils/AppError.js';
@@ -97,32 +98,65 @@ const createVisaOrder = catchAsyncError(
 
     }
 )
-const createSessionOrder = catchAsyncError( (request, response) => {
-        const sig = request.headers['stripe-signature'].toString()
+const createSessionOrder = catchAsyncError((request, response) => {
+    const sig = request.headers['stripe-signature'].toString()
 
-        let event;
+    let event;
 
-        try {
-            event = stripe.webhooks.constructEvent(request.body, sig, 'whsec_NgKHUUmbghBXOUFG0EC5AcLxTKDcSAwr');
-        } catch (err) {
-            return  response.status(400).send(`Webhook Error: ${err.message}`);
-            
-        }
+    try {
+        event = stripe.webhooks.constructEvent(request.body, sig, 'whsec_NgKHUUmbghBXOUFG0EC5AcLxTKDcSAwr');
+    } catch (err) {
+        return response.status(400).send(`Webhook Error: ${err.message}`);
 
-        // Handle the event
-
-        if(event.type==='checkout.session.completed'){
-            console.log('order here');
-            const checkoutSessionCompleted = event.data.object;
-
-        }else{
-            console.log(`Unhandled event type ${event.type}`);
-
-        }
-  
     }
+
+    // Handle the event
+
+    if (event.type === 'checkout.session.completed') {
+        console.log('order here');
+        card(event.data.object)
+    } else {
+        console.log(`Unhandled event type ${event.type}`);
+
+    }
+
+}
 )
 
 export {
-    createCashOrder, getUserOrder, getAllOrder, createVisaOrder,createSessionOrder
+    createCashOrder, getUserOrder, getAllOrder, createVisaOrder, createSessionOrder
+}
+
+
+async function card(e,res) {
+    const cart = await cartModel.findById(e.client_reference_id)
+    if (!cart) return next(new AppError(`cart not found`, 404))
+    let user = await userModel.findOne({email:e.customer_email})
+
+
+    const order = new orderModel({
+        user: user._id,
+        cartItems: cart.cartItems,
+        totalOrderPrice:e.amount_total/100,
+        shippingAddress: e.metadata.shippingAddress,
+        paymentMethod:'visa',
+        isPaid:true,
+        paidAt:Date.now(),
+    })
+    await order.save()
+
+    if (order) {
+        let options = cart.cartItems.map(item => ({
+            updateOne: {
+                filter: { _id: item.product },
+                update: { $inc: { quantity: -item.quantity, sold: item.quantity } }
+            }
+        }))
+        await productModel.bulkWrite(options)
+        await cartModel.findByIdAndDelete({user:user._id    })
+
+        return res.status(200).json({ message: "success", order })
+    } else {
+        return next(new AppError(`order not found`, 404))
+    }
 }
